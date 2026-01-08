@@ -13,31 +13,36 @@ export const loginSchema = z.object({
   password: z.string().min(1, 'Password is required'),
 });
 
-export const createCustomerSchema = z
-  .object({
-    name: z.string().min(2, 'Name must be at least 2 characters'),
+/**
+ * ✅ FIX (CORRECT WAY)
+ * - Accepts `phone` OR `mobile`
+ * - Outputs REQUIRED `mobile: string`
+ * - No refine()
+ * - No optional mobile
+ * - updateCustomerSchema works
+ */
+export const createCustomerSchema = z.object({
+  name: z.string().min(2, 'Name must be at least 2 characters'),
 
-    // ✅ FIX: accept both `mobile` and `phone`
-    mobile: z.string().regex(/^[6-9]\d{9}$/, 'Invalid Indian mobile number').optional(),
-    phone: z.string().regex(/^[6-9]\d{9}$/, 'Invalid Indian mobile number').optional(),
+  mobile: z.preprocess(
+    (val, ctx) => {
+      if (typeof val === 'string') return val;
+      const phone = (ctx as any)?.parent?.phone;
+      return phone;
+    },
+    z.string().regex(/^[6-9]\d{9}$/, 'Invalid Indian mobile number')
+  ),
 
-    email: z.string().email().optional().or(z.literal('')),
-    address: z.string().optional(),
-    city: z.string().optional(),
-    state: z.string().optional(),
-    pincode: z.string().regex(/^\d{6}$/, 'Invalid pincode').optional().or(z.literal('')),
-    id_proof_type: z.string().optional(),
-    id_proof_number: z.string().optional(),
-    photo_url: z.string().optional(),
-    notes: z.string().optional(),
-  })
-  .refine(
-    data => data.mobile || data.phone,
-    {
-      message: 'Mobile number is required',
-      path: ['mobile'],
-    }
-  );
+  email: z.string().email().optional().or(z.literal('')),
+  address: z.string().optional(),
+  city: z.string().optional(),
+  state: z.string().optional(),
+  pincode: z.string().regex(/^\d{6}$/, 'Invalid pincode').optional().or(z.literal('')),
+  id_proof_type: z.string().optional(),
+  id_proof_number: z.string().optional(),
+  photo_url: z.string().optional(),
+  notes: z.string().optional(),
+});
 
 export const updateCustomerSchema = createCustomerSchema.partial();
 
