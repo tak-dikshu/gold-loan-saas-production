@@ -11,25 +11,46 @@ export class LoanController {
         return;
       }
 
-      // ✅ HARD NORMALIZATION (STRINGS → NUMBERS / ISO DATE)
+      // 🔒 Normalize & coerce frontend payload
+      const gross = Number(req.body.gross_weight_grams);
+      const stone = Number(req.body.stone_weight_grams || 0);
+
+      // ❗ CORE FIX: calculate net weight
+      const net = gross - stone;
+
+      if (net <= 0) {
+        res.status(400).json({
+          error: 'Net gold weight must be greater than zero',
+        });
+        return;
+      }
+
       const payload = {
         customer_id: Number(req.body.customer_id),
         ornament_type: String(req.body.ornament_type),
-        gross_weight_grams: Number(req.body.gross_weight_grams),
-        stone_weight_grams: Number(req.body.stone_weight_grams || 0),
+
+        gross_weight_grams: gross,
+        stone_weight_grams: stone,
+        net_weight_grams: net, // ✅ REQUIRED BY DB / SERVICE
+
         purity: req.body.purity,
+
         gold_rate_per_gram: Number(req.body.gold_rate_per_gram),
         principal_amount: Number(req.body.principal_amount),
         interest_rate_percent: Number(req.body.interest_rate_percent),
         tenure_months: Number(req.body.tenure_months),
+
         start_date: new Date(req.body.start_date).toISOString(),
       };
 
+      // Zod validation (now passes cleanly)
       const validated = createLoanSchema.parse(payload);
-      const loan = LoanService.create(req.shopId, validated);
 
+      const loan = LoanService.create(req.shopId, validated);
       res.status(201).json(loan);
     } catch (error: any) {
+      console.error('LOAN CREATE ERROR:', error);
+
       if (error.name === 'ZodError') {
         res.status(400).json({
           error: 'Validation failed',
@@ -38,7 +59,7 @@ export class LoanController {
         return;
       }
 
-      res.status(400).json({
+      res.status(500).json({
         error: error.message || 'Failed to create loan',
       });
     }
