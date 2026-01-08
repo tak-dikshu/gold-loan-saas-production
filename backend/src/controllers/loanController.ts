@@ -11,37 +11,18 @@ export class LoanController {
         return;
       }
 
-      // ✅ FIX: normalize frontend payload → backend schema
+      // ✅ HARD NORMALIZATION (STRINGS → NUMBERS / ISO DATE)
       const payload = {
-        customer_id: req.body.customer_id ?? req.body.customerId,
-
-        ornament_type:
-          req.body.ornament_type ?? req.body.ornamentType,
-
-        gross_weight_grams:
-          req.body.gross_weight_grams ?? req.body.grossWeight,
-
-        stone_weight_grams:
-          req.body.stone_weight_grams ?? req.body.stoneWeight ?? 0,
-
+        customer_id: Number(req.body.customer_id),
+        ornament_type: String(req.body.ornament_type),
+        gross_weight_grams: Number(req.body.gross_weight_grams),
+        stone_weight_grams: Number(req.body.stone_weight_grams || 0),
         purity: req.body.purity,
-
-        gold_rate_per_gram:
-          req.body.gold_rate_per_gram ?? req.body.goldRate,
-
-        principal_amount:
-          req.body.principal_amount ?? req.body.loanAmount,
-
-        interest_rate_percent:
-          req.body.interest_rate_percent ?? req.body.interestRate,
-
-        tenure_months:
-          req.body.tenure_months ?? req.body.tenure,
-
-        // ✅ FIX: convert date to ISO datetime (required by Zod)
-        start_date: req.body.start_date
-          ? new Date(req.body.start_date).toISOString()
-          : new Date(req.body.startDate).toISOString(),
+        gold_rate_per_gram: Number(req.body.gold_rate_per_gram),
+        principal_amount: Number(req.body.principal_amount),
+        interest_rate_percent: Number(req.body.interest_rate_percent),
+        tenure_months: Number(req.body.tenure_months),
+        start_date: new Date(req.body.start_date).toISOString(),
       };
 
       const validated = createLoanSchema.parse(payload);
@@ -74,9 +55,7 @@ export class LoanController {
       const loans = LoanService.getAll(req.shopId, status);
       res.json(loans);
     } catch (error: any) {
-      res.status(500).json({
-        error: error.message || 'Failed to fetch loans',
-      });
+      res.status(500).json({ error: error.message || 'Failed to fetch loans' });
     }
   }
 
@@ -87,7 +66,7 @@ export class LoanController {
         return;
       }
 
-      const loanId = parseInt(req.params.id, 10);
+      const loanId = Number(req.params.id);
       const loan = LoanService.getById(req.shopId, loanId);
 
       if (!loan) {
@@ -97,9 +76,7 @@ export class LoanController {
 
       res.json(loan);
     } catch (error: any) {
-      res.status(500).json({
-        error: error.message || 'Failed to fetch loan',
-      });
+      res.status(500).json({ error: error.message || 'Failed to fetch loan' });
     }
   }
 
@@ -110,13 +87,11 @@ export class LoanController {
         return;
       }
 
-      const customerId = parseInt(req.params.customerId, 10);
+      const customerId = Number(req.params.customerId);
       const loans = LoanService.getByCustomer(req.shopId, customerId);
       res.json(loans);
     } catch (error: any) {
-      res.status(500).json({
-        error: error.message || 'Failed to fetch customer loans',
-      });
+      res.status(500).json({ error: error.message || 'Failed to fetch customer loans' });
     }
   }
 
@@ -130,9 +105,7 @@ export class LoanController {
       const loans = LoanService.getOverdueLoans(req.shopId);
       res.json(loans);
     } catch (error: any) {
-      res.status(500).json({
-        error: error.message || 'Failed to fetch overdue loans',
-      });
+      res.status(500).json({ error: error.message || 'Failed to fetch overdue loans' });
     }
   }
 
@@ -143,13 +116,11 @@ export class LoanController {
         return;
       }
 
-      const loanId = parseInt(req.params.id, 10);
+      const loanId = Number(req.params.id);
       const loan = LoanService.closeLoan(req.shopId, loanId);
       res.json(loan);
     } catch (error: any) {
-      res.status(400).json({
-        error: error.message || 'Failed to close loan',
-      });
+      res.status(400).json({ error: error.message || 'Failed to close loan' });
     }
   }
 }
