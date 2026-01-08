@@ -11,15 +11,28 @@ export class CustomerController {
         return;
       }
 
-      const validated = createCustomerSchema.parse(req.body);
+      // ✅ FIX: Normalize phone -> mobile before validation
+      const payload = {
+        ...req.body,
+        mobile: req.body.mobile ?? req.body.phone,
+      };
+
+      const validated = createCustomerSchema.parse(payload);
       const customer = CustomerService.create(req.shopId, validated);
+
       res.status(201).json(customer);
     } catch (error: any) {
       if (error.name === 'ZodError') {
-        res.status(400).json({ error: 'Validation failed', details: error.errors });
+        res.status(400).json({
+          error: 'Validation failed',
+          details: error.errors,
+        });
         return;
       }
-      res.status(400).json({ error: error.message || 'Failed to create customer' });
+
+      res.status(400).json({
+        error: error.message || 'Failed to create customer',
+      });
     }
   }
 
@@ -33,7 +46,9 @@ export class CustomerController {
       const customers = CustomerService.getAll(req.shopId);
       res.json(customers);
     } catch (error: any) {
-      res.status(500).json({ error: error.message || 'Failed to fetch customers' });
+      res.status(500).json({
+        error: error.message || 'Failed to fetch customers',
+      });
     }
   }
 
@@ -44,7 +59,7 @@ export class CustomerController {
         return;
       }
 
-      const customerId = parseInt(req.params.id);
+      const customerId = parseInt(req.params.id, 10);
       const customer = CustomerService.getById(req.shopId, customerId);
 
       if (!customer) {
@@ -54,7 +69,9 @@ export class CustomerController {
 
       res.json(customer);
     } catch (error: any) {
-      res.status(500).json({ error: error.message || 'Failed to fetch customer' });
+      res.status(500).json({
+        error: error.message || 'Failed to fetch customer',
+      });
     }
   }
 
@@ -65,16 +82,27 @@ export class CustomerController {
         return;
       }
 
-      const customerId = parseInt(req.params.id);
+      const customerId = parseInt(req.params.id, 10);
       const validated = updateCustomerSchema.parse(req.body);
-      const customer = CustomerService.update(req.shopId, customerId, validated);
+      const customer = CustomerService.update(
+        req.shopId,
+        customerId,
+        validated
+      );
+
       res.json(customer);
     } catch (error: any) {
       if (error.name === 'ZodError') {
-        res.status(400).json({ error: 'Validation failed', details: error.errors });
+        res.status(400).json({
+          error: 'Validation failed',
+          details: error.errors,
+        });
         return;
       }
-      res.status(400).json({ error: error.message || 'Failed to update customer' });
+
+      res.status(400).json({
+        error: error.message || 'Failed to update customer',
+      });
     }
   }
 
@@ -85,11 +113,14 @@ export class CustomerController {
         return;
       }
 
-      const customerId = parseInt(req.params.id);
+      const customerId = parseInt(req.params.id, 10);
       CustomerService.delete(req.shopId, customerId);
+
       res.json({ message: 'Customer deleted successfully' });
     } catch (error: any) {
-      res.status(400).json({ error: error.message || 'Failed to delete customer' });
+      res.status(400).json({
+        error: error.message || 'Failed to delete customer',
+      });
     }
   }
 
@@ -109,7 +140,9 @@ export class CustomerController {
       const customers = CustomerService.search(req.shopId, query);
       res.json(customers);
     } catch (error: any) {
-      res.status(500).json({ error: error.message || 'Search failed' });
+      res.status(500).json({
+        error: error.message || 'Search failed',
+      });
     }
   }
 }
